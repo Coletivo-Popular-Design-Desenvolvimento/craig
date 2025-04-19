@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 18.x
-
       - name: Install dependencies
         run: yarn
       - name: Write .env
@@ -28,10 +27,10 @@ jobs:
         with:
           path: .env
           contents: |
-            DISCORD_BOT_TOKEN=test
-            DISCORD_APP_ID=273518732733710337
-            DEVELOPMENT_GUILD_ID=
-            DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
+            DISCORD_BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+            DISCORD_APP_ID=${{ secrets.CLIENT_ID }}
+            DEVELOPMENT_GUILD_ID=${{ secrets.DEV_GUILD }}
+            DATABASE_URL=${{secrets.MOCKDB}}
           write-mode: overwrite
 
       - name: Write apps/dashboard/.env
@@ -39,8 +38,8 @@ jobs:
         with:
           path: apps/dashboard/.env
           contents: |
-            CLIENT_ID=999999999999999999
-            CLIENT_SECRET=test
+            CLIENT_ID=${{ secrets.CLIENT_ID }}
+            CLIENT_SECRET=${{ secrets.CLIENT_SECRET }}
 
             PATREON_CLIENT_ID=test
             PATREON_CLIENT_SECRET=test
