@@ -16,7 +16,6 @@ import { prisma } from '../../prisma';
 import { getSelfMember, ParsedRewards, stripIndentsAndLines, wait } from '../../util';
 import type RecorderModule from '.';
 import { UserExtraType, WebappOpCloseReason } from './protocol';
-import { WebappClient } from './webapp';
 import RecordingWriter from './writer';
 
 dayjs.extend(duration);
@@ -93,7 +92,6 @@ export default class Recording {
   stateDescription?: string;
   connection: Eris.VoiceConnection | null = null;
   receiver: Eris.VoiceDataStream | null = null;
-  webapp?: WebappClient;
 
   messageChannelID: string | null = null;
   messageID: string | null = null;
@@ -287,7 +285,6 @@ export default class Recording {
       }
     });
 
-    if (webapp && this.recorder.client.config.craig.webapp.on) this.webapp = new WebappClient(this, parsedRewards);
 
     onRecordingStart(this.user.id, this.channel.guild.id, this.autorecorded);
   }

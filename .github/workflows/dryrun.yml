@@ -41,21 +41,6 @@ jobs:
             CLIENT_ID=${{ secrets.CLIENT_ID }}
             CLIENT_SECRET=${{ secrets.CLIENT_SECRET }}
 
-            PATREON_CLIENT_ID=test
-            PATREON_CLIENT_SECRET=test
-
-            PATRON_TIER_MAP={"00001":2,"0002":3}
-            PATREON_WEBHOOK_SECRET=test
-
-            GOOGLE_CLIENT_ID=test
-            GOOGLE_CLIENT_SECRET=test
-
-            MICROSOFT_CLIENT_ID=test
-            MICROSOFT_CLIENT_SECRET=test
-
-            DROPBOX_CLIENT_ID=test
-            DROPBOX_CLIENT_SECRET=test
-
             APP_URI=http://localhost:3000
             JWT_SECRET=1234
           write-mode: overwrite
