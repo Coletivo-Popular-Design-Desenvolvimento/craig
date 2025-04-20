@@ -177,8 +177,8 @@ config_yarn(){
   yarn install
 
   # config prisma
-  yarn prisma:generate
-  yarn prisma:deploy
+  #yarn prisma:generate
+  #yarn prisma:deploy
 
   # build
   yarn run build
@@ -195,7 +195,7 @@ start_app(){
   # otherwise 'pm2' will not be found if this function
   # is ran separately
   source ~/.nvm/nvm.sh || true
-  nvm use 18.18.2
+  nvm use $NODE_VERSION
 
   info "Starting Craig..."
 
