@@ -243,7 +243,7 @@ export default class Join extends GeneralCommand {
     recording.messageChannelID = ctx.channelID;
 
     // Send DM
-    const dmMessage = await dmChannel.createMessage(makeDownloadMessage(recording, parsedRewards, this.client.config)).catch(() => null);
+    const dmMessage = await dmChannel.createMessage(makeDownloadMessage(recording, this.client.config)).catch(() => null);
 
     if (dmMessage)
       await ctx.sendFollowUp({

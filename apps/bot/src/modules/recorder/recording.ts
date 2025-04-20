@@ -187,9 +187,6 @@ export default class Recording {
     this.startedAt = new Date();
 
     const fileBase = path.join(this.recorder.recordingPath, `${this.id}.ogg`);
-    const { tier, rewards } = parsedRewards;
-    this.rewards = { tier, rewards };
-    if (rewards.sizeLimitMult) this.sizeLimit *= rewards.sizeLimitMult;
     await writeFile(
       fileBase + '.info',
       JSON.stringify({
@@ -218,7 +215,7 @@ export default class Recording {
         requesterId: this.user.id,
         clientId: this.recorder.client.bot.user.id,
         startTime: this.startedAt.toISOString(),
-        expiresAfter: rewards.downloadExpiryHours,
+        expiresAfter: 60 * 60 * 1000,
       }),
       { encoding: 'utf8' }
     );
@@ -228,10 +225,10 @@ export default class Recording {
     this.timeout = setTimeout(async () => {
       if (this.state !== RecordingState.RECORDING) return;
       this.writeToLog('Timeout reached, stopping recording');
-      this.stateDescription = `⚠️ You've reached the maximum time limit of ${rewards.recordHours} hours for this recording.`;
-      this.sendWarning(`You've reached the maximum time limit of ${rewards.recordHours} hours for this recording.`, false);
+      this.stateDescription = `⚠️ You've reached the maximum time limit of X hours for this recording.`;
+      this.sendWarning(`You've reached the maximum time limit of X hours for this recording.`, false);
       await this.stop();
-    }, rewards.recordHours * 60 * 60 * 1000);
+    }, 60 * 60 * 1000);
 
     this.usageInterval = setInterval(async () => {
       if (this.state !== RecordingState.RECORDING) return;
@@ -273,7 +270,7 @@ export default class Recording {
         guildId: this.channel.guild.id,
         clientId: this.recorder.client.bot.user.id,
         shardId: (this.recorder.client as unknown as CraigBot).shard!.id ?? -1,
-        expiresAt: new Date(this.startedAt.valueOf() + rewards.downloadExpiryHours * 60 * 60 * 1000),
+        expiresAt: new Date(this.startedAt.valueOf() + 60 * 60 * 1000),
         createdAt: this.startedAt
       }
     });
@@ -310,7 +307,7 @@ export default class Recording {
 
       this.recorder.recordings.delete(this.channel.guild.id);
 
-      if (this.rewards && this.startedAt && this.started)
+      if (this.startedAt && this.started)
         await prisma.recording
           .upsert({
             where: { id: this.id },
@@ -324,8 +321,7 @@ export default class Recording {
               guildId: this.channel.guild.id,
               clientId: this.recorder.client.bot.user.id,
               shardId: (this.recorder.client as unknown as CraigBot).shard!.id ?? -1,
-              rewardTier: this.rewards.tier,
-              expiresAt: new Date(this.startedAt.valueOf() + this.rewards.rewards.downloadExpiryHours * 60 * 60 * 1000),
+              expiresAt: new Date(this.startedAt.valueOf() * 60 * 60 * 1000),
               createdAt: this.startedAt,
               endedAt: new Date()
             }
