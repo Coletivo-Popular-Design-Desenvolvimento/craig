@@ -27,9 +27,14 @@ APT_DEPENDENCIES=(
   python3-setuptools # install
 )
 
-# Get the directory of the script being executed
-# this lets us call the function from anywhere and it will work
 craig_dir=$(dirname "$(realpath "$0")")
+NODE_VERSION="18.18.2"
+DATABASE_NAME="craig"
+POSTGRESQL_USER="$(whoami)"
+POSTGRESQL_PASSWORD="craig"
+POSTGRESQL_START_TIMEOUT_S=10
+REDIS_START_TIMEOUT_S=10
+DATABASE_URL=\"postgresql://$POSTGRESQL_USER:$POSTGRESQL_PASSWORD@localhost:5432/$DATABASE_NAME?schema=public\"
 
 ###################################################
 # Function definitions
@@ -190,7 +195,7 @@ start_app(){
   # otherwise 'pm2' will not be found if this function
   # is ran separately
   source ~/.nvm/nvm.sh || true
-  nvm use $NODE_VERSION
+  nvm use 18.18.2
 
   info "Starting Craig..."
 
@@ -223,7 +228,7 @@ config_cook(){
     exit 1 
   fi
 
-  source "$craig_dir/install.config"
+  # source "$craig_dir/install.config"
 
   OS="$(uname)"
   if [[ "${OS}" != "Linux" ]]
