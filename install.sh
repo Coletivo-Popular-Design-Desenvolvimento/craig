@@ -24,7 +24,7 @@ APT_DEPENDENCIES=(
   sed               # install
   coreutils         # install
   build-essential   # install
-  python-setuptools # install
+  python3-setuptools # install
 )
 
 # Get the directory of the script being executed
@@ -84,7 +84,6 @@ install_node() {
 }
 
 start_redis() {
-
   local start_time_s
   local current_time_s
 
@@ -120,7 +119,6 @@ start_redis() {
 }
 
 start_postgresql() {
-
   local start_time_s
   local current_time_s
 
@@ -168,7 +166,6 @@ start_postgresql() {
 }
 
 config_yarn(){
-
   info "Configuring yarn..."
 
   # install dependencies

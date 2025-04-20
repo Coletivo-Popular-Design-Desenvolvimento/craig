@@ -56,3 +56,6 @@ jobs:
 
       - name: Build Tasks
         run: cd apps/tasks && yarn prisma:generate && yarn build
+
+      - name: Run install
+        run: install.sh
