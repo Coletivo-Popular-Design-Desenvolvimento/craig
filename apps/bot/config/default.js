@@ -39,9 +39,9 @@ module.exports = {
 
   dexare: {
     // Bot token
-    token: env.DISCORD_TOKEN,
+    token: process.env.DISCORD_TOKEN,
     // Application ID
-    applicationID: env.DISCORD_APP_ID,
+    applicationID: process.env.DISCORD_APP_ID,
 
     /** @type {Eris.ClientOptions} */
     erisOptions: {

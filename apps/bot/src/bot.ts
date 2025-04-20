@@ -36,13 +36,6 @@ export interface CraigBotConfig extends BaseConfig {
     sizeLimitWeb: number;
     sizeLimitWebOpus: number;
     inviteID?: string;
-    webapp: {
-      on: boolean;
-      url: string;
-      token: string;
-      connectUrl: string;
-    };
-    rewardTiers: { [tier: string]: RewardTier };
   };
 
   logger: {
@@ -53,13 +46,6 @@ export interface CraigBotConfig extends BaseConfig {
   slash: {
     creator?: SlashCreatorOptions;
   };
-}
-
-export interface RewardTier {
-  recordHours: number;
-  downloadExpiryHours: number;
-  features: string[];
-  sizeLimitMult?: number;
 }
 
 export class CraigBot extends DexareClient<CraigBotConfig> {

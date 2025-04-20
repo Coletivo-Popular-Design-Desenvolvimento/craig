@@ -1,6 +1,8 @@
 name: Dryrun
 on:
   push:
+    branches:
+      - 'Kraig'
     paths:
       - ".github/workflows/dryrun.yml"
       - "apps/**"
@@ -45,17 +47,18 @@ jobs:
             JWT_SECRET=1234
           write-mode: overwrite
 
+#yarn prisma:generate (colocar denovo depois)
       - name: Build Bot
-        run: cd apps/bot && yarn prisma:generate && yarn build
+        run: cd apps/bot && yarn build
 
       - name: Build Dashboard
-        run: cd apps/dashboard && yarn prisma:generate && yarn build
+        run: cd apps/dashboard && yarn build
 
       - name: Build Download
         run: cd apps/download && yarn build
 
       - name: Build Tasks
-        run: cd apps/tasks && yarn prisma:generate && yarn build
+        run: cd apps/tasks && yarn build
 
       - name: Run install
         run: ./install.sh
