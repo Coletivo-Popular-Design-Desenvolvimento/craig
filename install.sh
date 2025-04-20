@@ -147,26 +147,16 @@ start_postgresql() {
     done 
   fi
 
-
   # create postgreSQL database if it doesn't already exist
-  if sudo -u postgres -i psql -lqt | cut -d \| -f 1 | grep -qw "$DATABASE_NAME"
+  if ! sudo -u postgres -i psql -lqt | cut -d \| -f 1 | grep -qw "$DATABASE_NAME";
   then
-    info "PostgreSQL database '$DATABASE_NAME' already exists."
-  else
-    # we need to be the postgres superuser to create a db
-    # -i to avoid the "could not  change directory to '...': Permission denied message"
-    sudo -u postgres -i createdb $DATABASE_NAME
-  fi 
-
-  # Don't know if this is strictly needed, but add user to run this database
+    sudo -u postgres -i createdb "$DATABASE_NAME"
+  fi
 
   # Check if user exists
   if ! sudo -u postgres -i psql -t -c '\du' | cut -d \| -f 1 | grep -qw "$POSTGRESQL_USER"
   then
-    # Create user if it doesn't exist
     sudo -u postgres -i psql -c "CREATE USER $POSTGRESQL_USER WITH PASSWORD '$POSTGRESQL_PASSWORD';"
-  else
-    info "PostgreSQL user '$POSTGRESQL_USER' already exists."
   fi
 
   sudo -u postgres -i psql -c "GRANT ALL PRIVILEGES ON DATABASE $DATABASE_NAME TO $POSTGRESQL_USER;"
@@ -200,7 +190,6 @@ config_yarn(){
 }
 
 start_app(){
-
   # otherwise 'pm2' will not be found if this function
   # is ran separately
   source ~/.nvm/nvm.sh || true
@@ -231,10 +220,7 @@ config_cook(){
 ###################################################
 
 { 
-  # Prompt for sudo up front for installing
-  # packages and configuring PostgreSQL
   info "This script requires sudo privileges to run"
-
   if ! sudo -v; then
     error "Sudo password entry was cancelled or incorrect."
     exit 1 
@@ -242,7 +228,6 @@ config_cook(){
 
   source "$craig_dir/install.config"
 
-  # check if user is using linux
   OS="$(uname)"
   if [[ "${OS}" != "Linux" ]]
   then

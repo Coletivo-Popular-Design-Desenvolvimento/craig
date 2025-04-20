@@ -2,7 +2,7 @@ import { CommandContext, CommandOptionType, SlashCreator } from 'slash-create';
 
 import { processCooldown } from '../redis';
 import GeneralCommand from '../slashCommand';
-import { checkBan, checkRecordingPermission, cutoffText } from '../util';
+import { checkRecordingPermission, cutoffText } from '../util';
 
 export default class Note extends GeneralCommand {
   constructor(creator: SlashCreator) {

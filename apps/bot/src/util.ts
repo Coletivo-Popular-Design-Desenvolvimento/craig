@@ -1,13 +1,12 @@
-import { Ban, Guild } from '@prisma/client';
+import { Guild } from '@prisma/client';
 import axios from 'axios';
 import { stripIndents, stripIndentTransformer, TemplateTag } from 'common-tags';
 import { CommandContext, DexareCommand } from 'dexare';
 import Eris from 'eris';
 import { ButtonStyle, ComponentActionRow, ComponentType, Member, MessageOptions } from 'slash-create';
 
-import type { CraigBot, CraigBotConfig, RewardTier } from './bot';
+import type { CraigBot, CraigBotConfig } from './bot';
 import type Recording from './modules/recorder/recording';
-import { prisma } from './prisma';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 export const version = require('../package.json').version;
@@ -80,28 +79,23 @@ export const stripIndentsAndLines = new TemplateTag(stripIndentTransformer('all'
   }
 });
 
-export function makeDownloadMessage(recording: Recording, parsedRewards: ParsedRewards, config: CraigBotConfig) {
-  const recordTime = Date.now() + 1000 * 60 * 60 * parsedRewards.rewards.recordHours;
-  const expireTime = Date.now() + 1000 * 60 * 60 * parsedRewards.rewards.downloadExpiryHours;
+export function makeDownloadMessage(recording: Recording, config: CraigBotConfig) {
+  const recordTime = Date.now() + 1000 * 60 * 60;
+  const expireTime = Date.now() + 1000 * 60 * 60;
   return {
     embeds: [
       {
         description: stripIndents`
-          Started ${recording.autorecorded ? 'auto-' : ''}recording in <#${recording.channel.id}> at <t:${Math.floor(Date.now() / 1000)}:F>.
+          Started recording in <#${recording.channel.id}> at <t:${Math.floor(Date.now() / 1000)}:F>.
           > You can bring up the recording panel with \`/join\`.
 
           ${stripIndentsAndLines`
             **Guild:** ${recording.channel.guild.name} (${recording.channel.guild.id})
             **Recording ID:** \`${recording.id}\`
-            **Delete key:** ||\`${recording.deleteKey}\`|| (click to show)
-            ${
-              recording.webapp
-                ? `**Webapp URL:** ${config.craig.webapp.connectUrl.replace('{id}', recording.id).replace('{key}', recording.ennuiKey)}`
-                : ''
-            }`}
+            **Delete key:** ||\`${recording.deleteKey}\`|| (click to show)`}
 
-          I will record up to ${parsedRewards.rewards.recordHours} hours, I'll stop recording <t:${Math.floor(recordTime / 1000)}:R> from now.
-          This recording will expire <t:${Math.floor(expireTime / 1000)}:R>. (${parsedRewards.rewards.downloadExpiryHours / 24} days from now)
+          I will record up to X hours, I'll stop recording <t:${Math.floor(recordTime / 1000)}:R> from now.
+          This recording will expire <t:${Math.floor(expireTime / 1000)}:R>. (X days from now)
         `,
         footer: {
           text: "The audio can be downloaded even while I'm still recording."
