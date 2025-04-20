@@ -71,7 +71,7 @@ export default class LoggerModule<T extends DexareClient<LoggerConfig>> extends 
 
     // Overwrite warn listener
     this.client.bot.removeAllListeners('warn').on('warn', (message, id) => {
-        this.client.emit('logger', 'warn', 'eris');
+        this.client.emit('logger', 'warn', 'eris', [message], { id });
     });
 
     this.filePath = __filename;
