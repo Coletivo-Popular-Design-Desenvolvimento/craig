@@ -243,7 +243,7 @@ config_cook(){
   install_apt_packages
   install_node
   start_redis
-  start_postgresql
+  #start_postgresql
   config_yarn
   config_cook
   start_app
