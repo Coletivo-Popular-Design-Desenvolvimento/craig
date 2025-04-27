@@ -1,23 +1,14 @@
-name: Dryrun
+name: Install
 on:
   push:
-    branches:
-      - 'Kraig'
-    paths:
-      - ".github/workflows/dryrun.yml"
-      - "apps/**"
-      - "package.json"
-      - "yarn.lock"
   workflow_dispatch:
-
 jobs:
   build:
-    name: Build Apps
+    name: build and install
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
       - name: Install Node v18
         uses: actions/setup-node@v1
         with:
@@ -34,7 +25,6 @@ jobs:
             DEVELOPMENT_GUILD_ID=${{ secrets.DEV_GUILD }}
             DATABASE_URL=${{secrets.MOCKDB}}
           write-mode: overwrite
-
       - name: Write apps/dashboard/.env
         uses: DamianReeves/write-file-action@v1.0
         with:
@@ -46,19 +36,13 @@ jobs:
             APP_URI=http://localhost:3000
             JWT_SECRET=1234
           write-mode: overwrite
-
-#yarn prisma:generate (colocar denovo depois)
       - name: Build Bot
-        run: cd apps/bot && yarn build
-
+        run: cd apps/bot && yarn prisma:generate && yarn build
       - name: Build Dashboard
-        run: cd apps/dashboard && yarn build
-
+        run: cd apps/dashboard && yarn prisma:generate && yarn build
       - name: Build Download
         run: cd apps/download && yarn build
-
       - name: Build Tasks
-        run: cd apps/tasks && yarn build
-
+        run: cd apps/tasks && yarn prisma:generate && yarn build
       - name: Run install
         run: ./install.sh
