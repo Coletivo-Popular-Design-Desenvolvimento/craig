@@ -9,12 +9,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        
       - name: Install Node v18
         uses: actions/setup-node@v1
         with:
           node-version: 18.x
+
       - name: Install dependencies
         run: yarn
+
       - name: Write .env
         uses: DamianReeves/write-file-action@v1.0
         with:
@@ -25,6 +28,7 @@ jobs:
             DEVELOPMENT_GUILD_ID=${{ secrets.DEV_GUILD }}
             DATABASE_URL=${{secrets.MOCKDB}}
           write-mode: overwrite
+
       - name: Write apps/dashboard/.env
         uses: DamianReeves/write-file-action@v1.0
         with:
@@ -36,13 +40,18 @@ jobs:
             APP_URI=http://localhost:3000
             JWT_SECRET=1234
           write-mode: overwrite
+
       - name: Build Bot
         run: cd apps/bot && yarn prisma:generate && yarn build
+
       - name: Build Dashboard
         run: cd apps/dashboard && yarn prisma:generate && yarn build
+
       - name: Build Download
         run: cd apps/download && yarn build
+
       - name: Build Tasks
         run: cd apps/tasks && yarn prisma:generate && yarn build
+        
       - name: Run install
         run: ./install.sh
