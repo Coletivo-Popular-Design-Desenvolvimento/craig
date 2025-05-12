@@ -1,20 +1,20 @@
 ## Descrição
-<!-- Descreva o que foi alterado, o porquê, e as principais modificações. -->
+Remoção de features irrelevantes para o funcionamento. 
 
 ## Link da tarefa
-<!-- Adicione aqui o link da tarefa no Jira, Trello ou qualquer ferramenta de gestão de tarefas. -->
-[CPDD-00](link-da-tarefa)
+[CPDD-160]https://www.notion.so/cpdd/Craig-Bot-funcionando-localmente-1c5c5f6d25f880b19c9eef021044fb87?pvs=4
 
 ## Tipo de mudança
 - [ ] Bugfix
 - [ ] Nova funcionalidade
-- [ ] Refatoração
+- [X] Refatoração
 - [ ] Documentação
 
 ## Como foi testado?
-<!-- Descreva os passos para reproduzir os testes e as verificações feitas. -->
+Colocar as variáveis relevantes no install.config.example e remover o .example do nome do arquivo.
+Rodar o install.sh
 
 ## Checklist
-- [ ] Código segue o padrão de estilo do projeto
+- [X] Código segue o padrão de estilo do projeto
 - [ ] Testes unitários foram adicionados
 - [ ] A documentação foi atualizada (se aplicável)
