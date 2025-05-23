@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 env:
   REGISTRY: ghcr.io #docker.io
-  IMAGE_NAME: cpdd/Kraig
+  IMAGE_NAME: cpdd/kraig
 jobs:
   build:
     name: build container image
