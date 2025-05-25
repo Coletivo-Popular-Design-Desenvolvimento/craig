@@ -256,7 +256,7 @@ config_yarn() {
   # yarn run sync:dev
 }
 
-config_cook() {
+config_cook(){
   info "Building cook..."
   mkdir -p "$craig_dir/rec"
   "$craig_dir/scripts/buildCook.sh"

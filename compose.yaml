@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 version: '3.8'
+=======
+>>>>>>> 170.KraigLocal
 services:
   app:
     build:
@@ -15,9 +18,26 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+<<<<<<< HEAD
+=======
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+
+>>>>>>> 170.KraigLocal
   postgres:
     image: postgres:latest
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
       - "5432:5432"
+<<<<<<< HEAD
+=======
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+>>>>>>> 170.KraigLocal
