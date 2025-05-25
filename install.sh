@@ -2,6 +2,12 @@
 
 set -e
 
+if [ -f /.dockerenv ] || grep -qE 'docker|kubepods|containerd' /proc/1/cgroup; then
+  SUDO=""
+else
+  SUDO="sudo"
+fi
+
 ###################################################
 # Variable definitions
 ###################################################
@@ -42,7 +48,7 @@ Usage: install.sh [options]
 options:
     -h, --help       Display this message.
 
-Please modify file 'install_config' located in the main directory of Craig with 
+Please modify file 'install_config' located in the main directory of Craig with
 values for the Discord bot environment variables
 
   - DISCORD_BOT_TOKEN
@@ -52,7 +58,7 @@ values for the Discord bot environment variables
   - DEVELOPMENT_GUILD_ID (optional)
 
 This script will prompt for sudo password so that it can automatically install
-packages and configure PostgreSQL. 
+packages and configure PostgreSQL.
 
 Various steps are required to run local instances of Craig.
 The steps are summarized below:
@@ -74,41 +80,40 @@ EOS
 }
 
 warning() {
-    echo "[Craig][Warning]: $1"
+  echo "[Craig][Warning]: $1"
 }
 
 error() {
-    echo "[Craig][Error]: $1" >&2
+  echo "[Craig][Error]: $1" >&2
 }
 
 info() {
-    echo "[Craig][Info]: $1"
+  echo "[Craig][Info]: $1"
 }
 
 install_apt_packages() {
   info "Updating and upgrading apt packages..."
-  sudo apt-get update
-  sudo apt-get -y upgrade
+  $SUDO apt-get update
+  $SUDO apt-get -y upgrade
 
   info "Installing apt dependencies..."
-  for package in "${APT_DEPENDENCIES[@]}"
-  do
-    sudo apt-get -y install "$package"
+  for package in "${APT_DEPENDENCIES[@]}"; do
+    $SUDO apt-get -y install "$package"
   done
 
   # Add redis repository to apt index and install it
   # for more info, see: https://redis.io/docs/install/install-redis/install-redis-on-linux/
-  curl -fsSL https://packages.redis.io/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
-  echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
-  sudo apt-get update || true
-  sudo apt-get -y install redis
+  curl -fsSL https://packages.redis.io/gpg | $SUDO gpg --yes --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+  echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | $SUDO tee /etc/apt/sources.list.d/redis.list
+  $SUDO apt-get update || true
+  $SUDO apt-get -y install redis
 }
 
 install_node() {
   # Install and run node (must come before npm install because npm is included with node)
   # we have to source nvm first otherwise in this non-interactive script it will not be available
   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-  
+
   # There is a version error raised somewhere in "nvm.sh"
   # because of set -e at the top of this script, we need to add the || true
   source ~/.nvm/nvm.sh || true
@@ -126,12 +131,12 @@ create_env_file() {
   local variable_names=("${@:2}")
 
   # recreate if it already exists
-  > "$output_file"
+  >"$output_file"
 
   # output the name of the env variable and its value
   for var_name in "${variable_names[@]}"; do
-      echo "$var_name=${!var_name}" >> "$output_file"
-  done  
+    echo "$var_name=${!var_name}" >>"$output_file"
+  done
 
 }
 
@@ -195,12 +200,12 @@ config_env() {
 
 }
 
-config_react(){
+config_react() {
 
   info "Configuring react..."
 
-  cp "$craig_dir/apps/bot/config/_default.js" "$craig_dir/apps/bot/config/default.js" 
-  cp "$craig_dir/apps/tasks/config/_default.js" "$craig_dir/apps/tasks/config/default.js" 
+  cp "$craig_dir/apps/bot/config/_default.js" "$craig_dir/apps/bot/config/default.js"
+  cp "$craig_dir/apps/tasks/config/_default.js" "$craig_dir/apps/tasks/config/default.js"
 
   # not very elegant, but here's some sed magic in order to update the javascript file with the required values
   # we are regexing the following pattern and replacing the 2nd and 4th capture group
@@ -215,12 +220,11 @@ config_react(){
   # ----------------------------
 
   sed -z -E -i "s/(dexare:.*token:\s*)('')(.*applicationID:\s*)('')/\
-  \1'$DISCORD_BOT_TOKEN'\3'$DISCORD_APP_ID'/"\
-  "$craig_dir/apps/bot/config/default.js"
-
+  \1'$DISCORD_BOT_TOKEN'\3'$DISCORD_APP_ID'/" \
+    "$craig_dir/apps/bot/config/default.js"
 
   # here's some more sed magic. this task isn't needed for local builds
-  # we are regexing the following pattern and replacing the 2nd capture 
+  # we are regexing the following pattern and replacing the 2nd capture
   # group with the ignored task
   #
   # -------------------------------
@@ -229,12 +233,12 @@ config_react(){
   # -------------------------------
 
   sed -z -E -i "s/(tasks:.*ignore:\s*)(\[\s*\])/\
-  \1[\"refreshPatrons\"]/"\
-  "$craig_dir/apps/tasks/config/default.js"
+  \1[\"refreshPatrons\"]/" \
+    "$craig_dir/apps/tasks/config/default.js"
 
 }
 
-config_yarn(){
+config_yarn() {
 
   info "Configuring yarn..."
 
@@ -249,7 +253,7 @@ config_yarn(){
 
   # only sync Discord slash commands to the guild
   # specified by DEVELOPMENT_GUILD_ID in install.config
-  # yarn run sync:dev 
+  # yarn run sync:dev
 }
 
 config_cook(){
@@ -259,40 +263,40 @@ config_cook(){
   "$craig_dir/scripts/downloadCookBuilds.sh"
 }
 
-
 ###################################################
 # Main script commands
 ###################################################
 
-{ 
+{
   # Parse command-line options
-  while [[ $# -gt 0 ]]
-  do
+  while [[ $# -gt 0 ]]; do
     case "$1" in
-      -h | --help)
-        usage ;;
-      *)
-        warning "Unrecognized option: '$1'"
-        usage 1
-        ;;
+    -h | --help)
+      usage
+      ;;
+    *)
+      warning "Unrecognized option: '$1'"
+      usage 1
+      ;;
     esac
   done
 
-  # Prompt for sudo up front for installing
-  # packages and configuring PostgreSQL
-  info "This script requires sudo privileges to run"
+  if ! [ -f /.dockerenv ] && ! grep -qE 'docker|kubepods|containerd' /proc/1/cgroup; then
+    # Prompt for sudo up front for installing
+    # packages and configuring PostgreSQL
+    info "This script requires sudo privileges to run"
 
-  if ! sudo -v; then
-    error "Sudo password entry was cancelled or incorrect."
-    exit 1 
+    if ! sudo -v; then
+      error "Sudo password entry was cancelled or incorrect."
+      exit 1
+    fi
   fi
 
   source "$craig_dir/install.config"
 
   # check if user is using linux
   OS="$(uname)"
-  if [[ "${OS}" != "Linux" ]]
-  then
+  if [[ "${OS}" != "Linux" ]]; then
     error "Craig is only supported on Linux."
     exit 1
   fi
