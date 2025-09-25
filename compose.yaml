@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   app:
     build:
@@ -25,10 +25,10 @@ services:
       - REDIS_URL=${REDIS_URL}
       - REDIS_HOST=redis
       - POSTGRESQL_HOST=postgres
-      - DATABASE_NAME=craig
+      - DATABASE_NAME=${DATABASE_NAME:-craig}
       - POSTGRESQL_USER=${POSTGRES_USER}
       - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
-      - NODE_VERSION=18.18.2
+      - NODE_VERSION=${NODE_VERSION:-18.18.2}
       - NODE_ENV=production
       - DOWNLOAD_DOMAIN=localhost:8080
       - REDIS_START_TIMEOUT_S=30
@@ -43,7 +43,7 @@ services:
   postgres:
     image: postgres:latest
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-craig}
+      - POSTGRES_DB=${DATABASE_NAME:-craig}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
