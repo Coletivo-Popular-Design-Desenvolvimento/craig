@@ -63,6 +63,6 @@ COPY . .
 RUN chmod +x run.sh && chmod +x install.sh && ./install.sh \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 3000
+EXPOSE 3000 5029
 
 CMD ["./run.sh"]

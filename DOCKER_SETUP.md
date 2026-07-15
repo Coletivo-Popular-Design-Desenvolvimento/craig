@@ -74,8 +74,11 @@ You should see 3 containers running:
 ### 5. Access Craig
 
 - **Discord Bot**: Should appear online in your Discord servers
-- **Web Dashboard**: http://localhost:8080/login
-- **File Downloads**: http://localhost:8080/rec/RECORDING_ID
+- **Web Dashboard**: http://localhost:3000/login
+- **File Downloads**: http://localhost:5029/rec/RECORDING_ID
+
+Craig hands out download links as `https://localhost:5029/rec/ID`. Change the
+protocol to `http://` by hand — `localhost` has no signed certificate.
 
 ## Troubleshooting
 
