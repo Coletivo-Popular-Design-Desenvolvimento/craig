@@ -1,8 +1,13 @@
 const Eris = require('eris');
+env = require('dotenv').config();
 
 module.exports = {
   // Redis, leave blank to connect to localhost:6379 with "craig:" as the prefix
-  redis: {},
+  redis: {
+    host: 'redis',
+    port: 6379,
+    keyPrefix: 'craig:'
+  },
   // redis: {
   //   host: 'localhost',
   //   port: 6379,
@@ -38,9 +43,9 @@ module.exports = {
 
   dexare: {
     // Bot token
-    token: '',
+    token: process.env.DISCORD_TOKEN,
     // Application ID
-    applicationID: '',
+    applicationID: process.env.DISCORD_APP_ID,
 
     /** @type {Eris.ClientOptions} */
     erisOptions: {
@@ -70,7 +75,7 @@ module.exports = {
       // The craig emoji ID
       emoji: '297187944295301122',
       // The domain to get downloads from, will be given in https
-      downloadDomain: 'localhost:5029',
+      downloadDomain: process.env.DOWNLOAD_DOMAIN || 'localhost:5029',
       // The homepage of the bot
       homepage: 'https://craig.chat/',
       // Record disk size limit, in bytes

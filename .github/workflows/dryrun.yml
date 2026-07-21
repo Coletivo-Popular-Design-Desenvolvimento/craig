@@ -1,74 +1,59 @@
 name: Dryrun
 on:
   push:
-    paths:
-      - ".github/workflows/dryrun.yml"
-      - "apps/**"
-      - "package.json"
-      - "yarn.lock"
+    branches: [main]
+  pull_request:
   workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io #docker.io
+  IMAGE_NAME: ${{ github.repository_owner }}/kraig
 
 jobs:
   build:
-    name: Build Apps
+    name: build container image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Install Node v18
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v4
         with:
-          node-version: 18.x
+          submodules: recursive
 
-      - name: Install dependencies
-        run: yarn
-      - name: Write .env
-        uses: DamianReeves/write-file-action@v1.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          path: .env
-          contents: |
-            DISCORD_BOT_TOKEN=test
-            DISCORD_APP_ID=273518732733710337
-            DEVELOPMENT_GUILD_ID=
-            DATABASE_URL="postgresql://johndoe:randompassword@localhost:5432/mydb?schema=public"
-          write-mode: overwrite
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Write apps/dashboard/.env
-        uses: DamianReeves/write-file-action@v1.0
+      - name: Log in to registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
         with:
-          path: apps/dashboard/.env
-          contents: |
-            CLIENT_ID=999999999999999999
-            CLIENT_SECRET=test
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-            PATREON_CLIENT_ID=test
-            PATREON_CLIENT_SECRET=test
+          # username: ${{ secrets.DOCKERHUB_USERNAME }}
+          # password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            PATRON_TIER_MAP={"00001":2,"0002":3}
-            PATREON_WEBHOOK_SECRET=test
-
-            GOOGLE_CLIENT_ID=test
-            GOOGLE_CLIENT_SECRET=test
-
-            MICROSOFT_CLIENT_ID=test
-            MICROSOFT_CLIENT_SECRET=test
-
-            DROPBOX_CLIENT_ID=test
-            DROPBOX_CLIENT_SECRET=test
-
-            APP_URI=http://localhost:3000
-            JWT_SECRET=1234
-          write-mode: overwrite
-
-      - name: Build Bot
-        run: cd apps/bot && yarn prisma:generate && yarn build
-
-      - name: Build Dashboard
-        run: cd apps/dashboard && yarn prisma:generate && yarn build
-
-      - name: Build Download
-        run: cd apps/download && yarn build
-
-      - name: Build Tasks
-        run: cd apps/tasks && yarn prisma:generate && yarn build
+      - name: Build and push Container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Containerfile
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

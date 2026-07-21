@@ -20,12 +20,13 @@
     "prisma:generate": "prisma generate --schema=../../prisma/schema.prisma"
   },
   "dependencies": {
-    "@discordjs/opus": "^0.8.0",
+    "@discordjs/opus": "^0.10.0",
     "@influxdata/influxdb-client": "^1.24.0",
     "@prisma/client": "^5.12.1",
     "@sentry/integrations": "^7.2.0",
     "@sentry/node": "^7.2.0",
     "@sentry/tracing": "^7.2.0",
+    "@snazzah/davey": "^0.1.12",
     "@trpc/client": "^9.26.2",
     "axios": "^0.27.2",
     "chalk": "4",
@@ -36,7 +37,7 @@
     "dbots": "^11.0.0",
     "dexare": "^3.0.1",
     "dotenv": "^16.0.3",
-    "eris": "github:CraigChat/dysnomia#69c2ec22f835fcea567d248b4b6999b9cb0854dc",
+    "eris": "github:CraigChat/dysnomia#cd792c8ee75970bb44d33baafb6c6ff7123e86f9",
     "eventemitter3": "^4.0.7",
     "fastq": "^1.13.0",
     "i18next": "^21.10.0",
