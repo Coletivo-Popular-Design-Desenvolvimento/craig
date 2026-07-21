@@ -1,13 +1,43 @@
-version: '3.8'
 services:
   app:
     build:
       context: .
       dockerfile: Containerfile
+      args:
+        - CLIENT_ID=${CLIENT_ID}
+        - CLIENT_SECRET=${CLIENT_SECRET}
+        - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+        - DISCORD_APP_ID=${DISCORD_APP_ID}
+        - DEVELOPMENT_GUILD_ID=${DEVELOPMENT_GUILD_ID}
     stdin_open: true
     tty: true
     ports:
-      - "8080:8080"
+      - "3000:3000"
+      - "5029:5029"
+    volumes:
+      - ./rec:/app/rec
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_APP_ID=${DISCORD_APP_ID}
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
+      - DEVELOPMENT_GUILD_ID=${DEVELOPMENT_GUILD_ID}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - REDIS_HOST=redis
+      - POSTGRESQL_HOST=postgres
+      - DATABASE_NAME=${POSTGRES_DB:-craig}
+      - POSTGRESQL_USER=${POSTGRES_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - NODE_VERSION=${NODE_VERSION:-18.18.2}
+      - NODE_ENV=production
+      # Fastify binds to this interface; must be 0.0.0.0 or the published
+      # port cannot reach it from outside the container.
+      - API_HOST=0.0.0.0
+      - DOWNLOAD_DOMAIN=localhost:5029
+      - REDIS_START_TIMEOUT_S=30
+      - POSTGRESQL_START_TIMEOUT_S=60
     depends_on:
       - redis
       - postgres
@@ -15,9 +45,21 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
   postgres:
-    image: postgres:latest
+    # Pinned: 18+ images changed the data directory layout and expect a single
+    # mount at /var/lib/postgresql instead. 16 matches what install.sh installs.
+    image: postgres:16
     environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_DB=${POSTGRES_DB:-craig}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
+  redis-data:

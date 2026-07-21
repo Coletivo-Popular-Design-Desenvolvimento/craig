@@ -241,6 +241,19 @@ export default class Join extends GeneralCommand {
 
     recording.messageID = messageID;
     recording.messageChannelID = ctx.channelID;
+    const error = await recording
+      .start()
+      .then(() => false)
+      .catch((e) => e);
+
+    if (error !== false) {
+      this.client.commands.logger.error(
+        `Failed to start recording ${recording.id} (${guild.name}, ${guild.id}) (${ctx.user.username}#${ctx.user.discriminator}, ${ctx.user.id})`,
+        error
+      );
+      await this.reportError(ctx, error, recording).catch(() => {});
+      return;
+    }
 
     // Send DM
     const dmMessage = await dmChannel.createMessage(makeDownloadMessage(recording, this.client.config)).catch(() => null);
