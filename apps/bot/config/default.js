@@ -75,7 +75,7 @@ module.exports = {
       // The craig emoji ID
       emoji: '297187944295301122',
       // The domain to get downloads from, will be given in https
-      downloadDomain: 'localhost:5029',
+      downloadDomain: process.env.DOWNLOAD_DOMAIN || 'localhost:5029',
       // The homepage of the bot
       homepage: 'https://craig.chat/',
       // Record disk size limit, in bytes

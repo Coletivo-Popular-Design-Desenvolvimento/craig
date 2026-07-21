@@ -11,9 +11,12 @@ services:
         - DEVELOPMENT_GUILD_ID=${DEVELOPMENT_GUILD_ID}
     stdin_open: true
     tty: true
+    # Bound to loopback: only the reverse proxy (Caddy) reaches these.
+    # Dashboard host port moved to 4000 (3000 is contended on this box);
+    # downloads stay on 5029, which is free here.
     ports:
-      - "3000:3000"
-      - "5029:5029"
+      - "127.0.0.1:4000:3000"
+      - "127.0.0.1:5029:5029"
     volumes:
       - ./rec:/app/rec
     environment:
@@ -35,7 +38,12 @@ services:
       # Fastify binds to this interface; must be 0.0.0.0 or the published
       # port cannot reach it from outside the container.
       - API_HOST=0.0.0.0
-      - DOWNLOAD_DOMAIN=localhost:5029
+      - DOWNLOAD_DOMAIN=${DOWNLOAD_DOMAIN:-localhost:5029}
+      - APP_URI=${APP_URI:-http://localhost:3000}
+      - JWT_SECRET=${JWT_SECRET}
+      # Behind a reverse proxy: trust X-Forwarded-* so HTTPS URLs and
+      # client IPs are resolved correctly.
+      - TRUST_PROXY=1
       - REDIS_START_TIMEOUT_S=30
       - POSTGRESQL_START_TIMEOUT_S=60
     depends_on:
@@ -43,8 +51,11 @@ services:
       - postgres
   redis:
     image: redis:latest
+    # Isolated Craig Redis. The app reaches it over the compose network
+    # (REDIS_HOST=redis); the host publish is loopback-only on 6380 so it
+    # doesn't clash with the existing chat-redis-1 on 6379.
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6380:6379"
     volumes:
       - redis-data:/data
   postgres:
@@ -55,8 +66,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-craig}
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    # Loopback-only on 5433 to avoid clashing with the existing
+    # chat-postgres-1 on 5432. The app connects over the compose network
+    # (POSTGRESQL_HOST=postgres).
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
