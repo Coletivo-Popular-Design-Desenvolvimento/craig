@@ -174,12 +174,21 @@ fi
 exec 9< "$ID.ogg.data"
 flock -n 9 || exit 1
 
-# Cooking parallelism configuration (overridable via environment)
-#   COOK_CPUS     - CPU affinity range passed to taskset (default cores 0-7)
-#   COOK_PARALLEL - how many tracks to encode concurrently for zip containers
-COOK_CPUS="${COOK_CPUS:-0-7}"
-COOK_PARALLEL="${COOK_PARALLEL:-8}"
-NICE="nice -n10 taskset -c $COOK_CPUS ionice -c3 chrt -i 0"
+# Cooking parallelism and scheduling configuration (overridable via environment)
+#   COOK_PARALLEL   - how many tracks to encode concurrently for zip containers.
+#                     Defaults to the number of available CPUs (nproc): more than
+#                     that gives no speedup and only wastes RAM. On a 2-CPU box
+#                     this is 2; on a big box it scales up automatically.
+#   COOK_CPUS       - CPU affinity range for taskset (e.g. "0-7"); empty = no pinning (default)
+#   COOK_SCHED_IDLE - set to 1 to run at idle CPU/IO priority (SCHED_IDLE + ionice idle).
+#                     That is the upstream default, meant for a dedicated box with spare
+#                     cycles; on a busy/shared server it starves the encoders and makes
+#                     cooking take absurdly long, so it is OFF by default here.
+COOK_PARALLEL="${COOK_PARALLEL:-$(nproc 2>/dev/null || echo 2)}"
+COOK_CPUS="${COOK_CPUS:-}"
+NICE="nice -n10"
+[ "$COOK_CPUS" ] && NICE="$NICE taskset -c $COOK_CPUS"
+[ "$COOK_SCHED_IDLE" = "1" ] && NICE="$NICE ionice -c3 chrt -i 0"
 CODECS=`timeout 10 "$SCRIPTBASE/cook/oggtracks" < $ID.ogg.header1`
 STREAM_NOS=`timeout 10 "$SCRIPTBASE/cook/oggtracks" -n < $ID.ogg.header1`
 NB_STREAMS=`echo "$CODECS" | wc -l`
