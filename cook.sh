@@ -140,6 +140,20 @@ then
     ext=ogg
 fi
 
+# Zip-family containers pack finished per-track files with `zip`, which reads them
+# strictly one at a time. For those we encode tracks to real files in parallel
+# (see COOK_PARALLEL) instead of streaming through FIFOs. The `copy` format and the
+# streaming containers (ogg/matroska/mix) keep the single-consumer FIFO pipeline.
+PARALLEL_ENCODE=0
+if [ "$FORMAT" != "copy" ]
+then
+    case "$CONTAINER" in
+        zip|exe|aupzip)
+            PARALLEL_ENCODE=1
+            ;;
+    esac
+fi
+
 cd "$SCRIPTBASE/rec"
 
 tmpdir=`mktemp -d`
@@ -160,7 +174,12 @@ fi
 exec 9< "$ID.ogg.data"
 flock -n 9 || exit 1
 
-NICE="nice -n10 taskset -c 0-7 ionice -c3 chrt -i 0"
+# Cooking parallelism configuration (overridable via environment)
+#   COOK_CPUS     - CPU affinity range passed to taskset (default cores 0-7)
+#   COOK_PARALLEL - how many tracks to encode concurrently for zip containers
+COOK_CPUS="${COOK_CPUS:-0-7}"
+COOK_PARALLEL="${COOK_PARALLEL:-8}"
+NICE="nice -n10 taskset -c $COOK_CPUS ionice -c3 chrt -i 0"
 CODECS=`timeout 10 "$SCRIPTBASE/cook/oggtracks" < $ID.ogg.header1`
 STREAM_NOS=`timeout 10 "$SCRIPTBASE/cook/oggtracks" -n < $ID.ogg.header1`
 NB_STREAMS=`echo "$CODECS" | wc -l`
@@ -222,7 +241,8 @@ do
     [ "$O_USER" ] || unset O_USER
     O_FN="$c${O_USER+-}$O_USER.$ext"
     O_FFN="$OUTDIR/$O_FN"
-    mkfifo "$O_FFN"
+    # Parallel zip encoding writes real files; only streaming pipelines need FIFOs.
+    [ "$PARALLEL_ENCODE" = "1" ] || mkfifo "$O_FFN"
 
     # Make the extractor line for this file
     if [ "$FORMAT" = "wavsfx" ]
@@ -254,42 +274,52 @@ then
 fi
 
 
-# Encode thru fifos
-for c in `seq -w 1 $NB_STREAMS`
-do
-    O_USER="`$SCRIPTBASE/cook/userinfo.js $ID $c`"
-    [ "$O_USER" ] || unset O_USER
-    O_FN="$c${O_USER+-}$O_USER.$ext"
-    O_FFN="$OUTDIR/$O_FN"
-    T_DURATION=`timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/oggduration" $c < $ID.ogg.data`
-    sno=`echo "$STREAM_NOS" | sed -n "$c"p`
+# Encode the tracks. For zip-family containers we encode each track to a real
+# file, COOK_PARALLEL at a time, and block until they are all done (the zip step
+# reads the finished files). Streaming containers keep the FIFO pipeline.
+if [ "$PARALLEL_ENCODE" = "1" ]
+then
+    export SCRIPTBASE ext OUTDIR DEF_TIMEOUT NICE FILTER ENCODE CODECS STREAM_NOS
+    seq -w 1 $NB_STREAMS |
+        timeout $DEF_TIMEOUT xargs -P "$COOK_PARALLEL" -I '{}' \
+            "$SCRIPTBASE/cook/encode-track.sh" "$ID" '{}'
+else
+    for c in `seq -w 1 $NB_STREAMS`
+    do
+        O_USER="`$SCRIPTBASE/cook/userinfo.js $ID $c`"
+        [ "$O_USER" ] || unset O_USER
+        O_FN="$c${O_USER+-}$O_USER.$ext"
+        O_FFN="$OUTDIR/$O_FN"
+        T_DURATION=`timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/oggduration" $c < $ID.ogg.data`
+        sno=`echo "$STREAM_NOS" | sed -n "$c"p`
+        if [ "$FORMAT" = "copy" -o "$CONTAINER" = "mix" ]
+        then
+            timeout $DEF_TIMEOUT cat $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data \
+                $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data |
+                timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/oggcorrect" $sno > "$O_FFN" &
+
+        else
+            CODEC=`echo "$CODECS" | sed -n "$c"p`
+            [ "$CODEC" = "opus" ] && CODEC=libopus
+            timeout $DEF_TIMEOUT cat $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data \
+                $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data |
+                timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/oggcorrect" $sno |
+                timeout $DEF_TIMEOUT $NICE ffmpeg -codec $CODEC -copyts -i - \
+                -af "$FILTER" \
+                -flags bitexact -f wav - |
+                timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/wavduration" "$T_DURATION" |
+                (
+                    timeout $DEF_TIMEOUT $NICE $ENCODE > "$O_FFN";
+                    cat > /dev/null
+                )
+
+        fi
+    done &
     if [ "$FORMAT" = "copy" -o "$CONTAINER" = "mix" ]
     then
-        timeout $DEF_TIMEOUT cat $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data \
-            $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data |
-            timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/oggcorrect" $sno > "$O_FFN" &
-
-    else
-        CODEC=`echo "$CODECS" | sed -n "$c"p`
-        [ "$CODEC" = "opus" ] && CODEC=libopus
-        timeout $DEF_TIMEOUT cat $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data \
-            $ID.ogg.header1 $ID.ogg.header2 $ID.ogg.data |
-            timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/oggcorrect" $sno |
-            timeout $DEF_TIMEOUT $NICE ffmpeg -codec $CODEC -copyts -i - \
-            -af "$FILTER" \
-            -flags bitexact -f wav - |
-            timeout $DEF_TIMEOUT $NICE "$SCRIPTBASE/cook/wavduration" "$T_DURATION" |
-            (
-                timeout $DEF_TIMEOUT $NICE $ENCODE > "$O_FFN";
-                cat > /dev/null
-            )
-
+        # Wait for the immediate child, which has spawned more children
+        wait
     fi
-done &
-if [ "$FORMAT" = "copy" -o "$CONTAINER" = "mix" ]
-then
-    # Wait for the immediate child, which has spawned more children
-    wait
 fi
 
 
