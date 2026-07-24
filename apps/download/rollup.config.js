@@ -39,6 +39,13 @@ const locales = readdirSync(localePath)
     {}
   );
 
+// Fail the build loudly instead of shipping a bundle with empty i18n (which makes
+// the page render raw translation keys like "info.rec_id"). This guards against a
+// degraded build environment where the locale folder is missing/empty.
+if (!Object.keys(locales).length || !locales.en || !Object.keys(locales.en).length) {
+  throw new Error(`[rollup] No locales found at ${localePath} — refusing to build a front-end without translations.`);
+}
+
 export default ({ watch }) => [
   {
     // Page Build

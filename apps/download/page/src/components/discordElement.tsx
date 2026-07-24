@@ -6,6 +6,7 @@ interface DiscordElementProps {
   elementType?: 'channel';
   type?: number;
   avatar?: string;
+  avatarUrl?: string;
   icon?: string;
   name?: string;
   username?: string;
@@ -13,8 +14,10 @@ interface DiscordElementProps {
   discrim?: string;
 }
 
-export default function DiscordElement({ id, avatar, icon, name, username, discriminator, discrim, elementType, type }: DiscordElementProps) {
-  const image = avatar || icon;
+export default function DiscordElement({ id, avatar, avatarUrl, icon, name, username, discriminator, discrim, elementType, type }: DiscordElementProps) {
+  // Prefer the inlined base64 avatar, but fall back to the CDN URL when the bot
+  // couldn't fetch/inline it (otherwise the participant would render with no image).
+  const image = avatar || avatarUrl || icon;
   const elementDiscrim = discriminator || discrim;
   let elementIcon;
 

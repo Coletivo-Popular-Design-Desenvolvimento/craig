@@ -102,7 +102,7 @@ export default function GlowersSection({ users, platform, onDownload }: GlowersS
                   animationDelay: `${i / 2}s`
                 }}
               />
-              <img class="absolute w-18 h-18 top-1 left-1 rounded-full bg-black" src={user.avatar || '/craig.png'} />
+              <img class="absolute w-18 h-18 top-1 left-1 rounded-full bg-black" src={user.avatar || user.avatarUrl || '/craig.png'} />
             </div>
           ))}
         </div>

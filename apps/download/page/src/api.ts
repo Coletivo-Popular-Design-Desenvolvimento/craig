@@ -37,6 +37,7 @@ export interface RecordingUser {
   name: string;
   discrim: string;
   avatar?: string;
+  avatarUrl?: string;
 }
 
 export interface CookPayload {
