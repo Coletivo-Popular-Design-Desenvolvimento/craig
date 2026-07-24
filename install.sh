@@ -1,6 +1,10 @@
 #!/bin/bash
 
 set -e
+# Without pipefail the script's exit code is masked by the `| tee` at the end of
+# the main block, so a failed step would still report success. The Containerfile
+# runs each phase as its own layer and must fail the build when a step fails.
+set -o pipefail
 
 if [ -f /.dockerenv ] || grep -qE 'docker|kubepods|containerd' /proc/1/cgroup; then
   SUDO=""
@@ -126,9 +130,9 @@ install_node() {
   npm install -g pm2
 }
 
-config_yarn() {
+config_deps() {
 
-  info "Configuring yarn..."
+  info "Installing yarn dependencies..."
 
   # Make sure NVM environment is loaded
   # shellcheck disable=SC1090
@@ -140,6 +144,16 @@ config_yarn() {
 
   # rebuild native modules to ensure compatibility
   npm rebuild
+}
+
+config_build() {
+
+  info "Building application..."
+
+  # Make sure NVM environment is loaded
+  # shellcheck disable=SC1090
+  source ~/.nvm/nvm.sh || true
+  nvm use "$NODE_VERSION"
 
   # build
   yarn run build
@@ -163,11 +177,18 @@ config_cook() {
 ###################################################
 
 {
+  STEP=""
+
   # Parse command-line options
   while [[ $# -gt 0 ]]; do
     case "$1" in
     -h | --help)
       usage
+      ;;
+    --step)
+      STEP="$2"
+      shift 2
+      continue
       ;;
     *)
       warning "Unrecognized option: '$1'"
@@ -175,6 +196,24 @@ config_cook() {
       ;;
     esac
   done
+
+  # When a single step is requested (used by the Containerfile to build each
+  # part in its own cacheable Docker layer), run only that phase and exit.
+  # Without --step, the full local-dev flow below runs as before.
+  if [[ -n "$STEP" ]]; then
+    case "$STEP" in
+    apt) install_apt_packages ;;
+    node) install_node ;;
+    deps) config_deps ;;
+    build) config_build ;;
+    cook) config_cook ;;
+    *)
+      error "Unknown step: '$STEP' (valid: apt, node, deps, build, cook)"
+      exit 1
+      ;;
+    esac
+    exit 0
+  fi
 
   if ! [ -f /.dockerenv ] && ! grep -qE 'docker|kubepods|containerd' /proc/1/cgroup; then
     # Prompt for sudo up front for installing
@@ -198,7 +237,8 @@ config_cook() {
 
   install_apt_packages
   install_node
-  config_yarn
+  config_deps
+  config_build
   config_cook
 
   info "Craig installation finished..."
